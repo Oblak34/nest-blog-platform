@@ -54,7 +54,7 @@ export class PostController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePost(@Param('id') id: string){
-    const result: true|null = await this.postService.delete(id)
+    const result = await this.postService.delete(id)
     if(result === null){
       throw new NotFoundException(`post with id ${id} not exist`)
     }

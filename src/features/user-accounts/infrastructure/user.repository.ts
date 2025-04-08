@@ -11,4 +11,19 @@ export class UserRepository {
   async save(user: UserDocument) {
     await user.save();
   }
+  async findByEmail(email: string){
+    return await this.UserModel.findOne({'accountData.email': email})
+  }
+  async findByCode(code: string){
+    return await this.UserModel.findOne({'emailConfirmation.confirmationCode' : code})
+  }
+  async findByRecoveryCode(code: string){
+    return await this.UserModel.findOne({'emailConfirmation.passwordRecoveryCode' : code})
+  }
+  async findByLoginAndEmail(email: string, login: string){
+    return this.UserModel.findOne({ $or: [{ 'accountData.login': login }, { 'accountData.email': email }] });
+  }
+  async findByLoginOrEmail(loginOrEmail: string){
+    return this.UserModel.findOne({ $or: [{ 'accountData.login': loginOrEmail }, { 'accountData.email': loginOrEmail }] });
+  }
 }

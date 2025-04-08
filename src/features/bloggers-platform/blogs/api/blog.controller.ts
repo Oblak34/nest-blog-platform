@@ -22,6 +22,7 @@ import { PostQueryRepository } from '../../posts/infrastructure/post.query-repos
 import { GetPostsQueryParams } from '../../posts/api/get-posts-query-params.input-dto';
 import { BlogRepository } from '../infrastructure/blog.repository';
 import { BlogDocument } from '../domain/blog.entity';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('blogs')
 export class BlogController {
@@ -43,6 +44,7 @@ export class BlogController {
     }
     return blog
   }
+  @Throttle({ default: { limit: 5, ttl: 10000 } })
   @Post()
   async createBlog(@Body() body: BlogCreateDto): Promise<BlogViewDto | null> {
     const blogId: string = await this.blogService.createBlog(body);

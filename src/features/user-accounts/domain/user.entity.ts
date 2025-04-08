@@ -2,30 +2,68 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
 import { CreateUserDto } from '../api/input/create-user.dto';
 import { UserViewDto } from '../api/output/user-view.dto';
-
-export const loginConstraints = {
-  minLength: 3,
-  maxLength: 10,
-};
-export const passwordConstraints = {
-  minLength: 6,
-  maxLength: 20,
-};
+import bcrypt from "bcrypt";
+import {add} from "date-fns/add";
+import { ExpDate } from './dto/expDate';
 
 
-@Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })
-export class User {
-  @Prop({ type: String, required: true, ...loginConstraints })
+@Schema()
+export class AccountData {
+  @Prop({type: String, required: true})
   login: string;
-  @Prop({ type: String, required: true })
-  password: string;
-  @Prop({ type: String, required: true })
+  @Prop({type: String, required: true})
+  hashPassword: string;
+  @Prop({type: String, required: true})
   email: string;
-  @Prop({ type: Date, nullable: true, default: null })
-  deletedAt: Date | null;
+  @Prop({ type: Date, nullable: true, default: null, required: true })
+  createdAt: string;
+}
+export const AccountDataSchema = SchemaFactory.createForClass(AccountData);
 
-  createdAt: Date;
-  updatedAt: Date;
+@Schema()
+export class EmailConfirmation {
+  @Prop({type: String, required: true})
+  confirmationCode: string;
+  @Prop({type: Date, required: true})
+  expirationDate: Date;
+
+  @Prop({type: Boolean, required: true})
+  isConfirmed: boolean;
+  @Prop({ type: String, default: null })
+  passwordRecoveryCode: string | null;
+}
+export const EmailConfirmationSchema = SchemaFactory.createForClass(EmailConfirmation)
+
+@Schema()
+export class User {
+  @Prop({ type: AccountDataSchema, required: true, _id: false })
+  accountData: AccountData;
+
+  @Prop({ type: EmailConfirmationSchema, required: true, _id: false})
+  emailConfirmation: EmailConfirmation
+  
+  @Prop({ type: Date, nullable: true, default: null })
+  deletedAt: Date
+
+  constructor(dto: CreateUserDto, code: string, expDate: ExpDate) {
+    this.accountData =  {
+      login: dto.login,
+      email: dto.email,
+      hashPassword: this._createHash(dto.password),
+      createdAt: new Date().toISOString()
+    }
+    this.emailConfirmation = {
+      confirmationCode: code,
+      expirationDate: add(new Date(), expDate),
+      isConfirmed: false,
+      passwordRecoveryCode: code ? code : null
+    }
+ }
+
+  private _createHash(password:string):string {
+    const salt = bcrypt.genSaltSync(10);
+    return bcrypt.hashSync(password, salt);
+  }
 
   makeDeleted() {
     if (this.deletedAt !== null) {
@@ -34,20 +72,17 @@ export class User {
     this.deletedAt = new Date();
   }
 
-  static createInstance(dto: CreateUserDto): UserDocument {
-    const user = new this();
-    user.login = dto.login;
-    user.password = dto.password;
-    user.email = dto.email;
-    return user as UserDocument;
+  setConfirmationCode(confirmCode: string) {
+    this.emailConfirmation.confirmationCode = confirmCode
   }
+
 
   static convertToView(user: UserDocument): UserViewDto {
     return {
-      id: user._id.toString(),
-      login: user.login,
-      email: user.email,
-      createdAt: user.createdAt,
+      id: user.id,
+      login: user.accountData.login,
+      email: user.accountData.email,
+      createdAt: user.accountData.createdAt
     };
   }
 }

@@ -20,8 +20,8 @@ export class BadRequestDomainException extends DomainException {
         super('Bad Request', DomainExceptionCode.BadRequest, extensions);
     }
 
-    static create(message?: string, key?: string){
-        return new this(message ? [new ErrorExtension(message, key)] : [])
+    static create(message?: string, field?: string){
+        return new this(message ? [new ErrorExtension(message, field)] : [])
     }
 }
 
@@ -30,8 +30,8 @@ export class UnauthorizedDomainException extends DomainException {
         super('Unauthorized', DomainExceptionCode.Unauthorized, extensions);
     }
 
-    static create(message?: string, key?: string) {
-        return new this(message ? [new ErrorExtension(message, key)] : []);
+    static create(message?: string, field?: string) {
+        return new this(message ? [new ErrorExtension(message, field)] : []);
     }
 }
 
@@ -40,8 +40,8 @@ export class ForbiddenDomainException extends DomainException {
         super('Forbidden', DomainExceptionCode.Forbidden, extensions);
     }
 
-    static create(message?: string, key?: string){
-        return new this(message ? [new ErrorExtension(message, key)] : [])
+    static create(message?: string, field?: string){
+        return new this(message ? [new ErrorExtension(message, field)] : [])
     }
 }
 
@@ -50,10 +50,11 @@ export class NotFoundDomainException extends DomainException {
         super('Not Found', DomainExceptionCode.NotFound, extensions);
     }
 
-    static create(message?: string, key?: string){
-        return new this(message ? [new ErrorExtension(message, key)] : [])
+    static create(message?: string, field?: string){
+        return new this(message ? [new ErrorExtension(message, field)] : [])
     }
 }
+
 
 
 
