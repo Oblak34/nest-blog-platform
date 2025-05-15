@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
+import { PostLikesDto } from '../api/input/post-likes.dto';
 
 export enum Status {
   None = 'None',
@@ -8,27 +9,27 @@ export enum Status {
 }
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' }})
-export class Likes {
-  @Prop()
-  status: Status
-  @Prop()
+export class LikesPost {
+  @Prop({type: String, enum: [...Object.values(Status)] })
+  status: string
+  @Prop({type: String, required: true})
   userId: string
-  @Prop()
+  @Prop({type: String, required: true})
   postId: string
-  @Prop()
+  @Prop({type: String, required: true})
   login: string
-  @Prop()
-  createdAt: Date
+  @Prop({type: String, required: true})
+  createdAt: string
 
-  constructor(userId: string, postId: string, status: Status, login: string){
-    this.status = status
-    this.userId = userId
-    this.postId = postId
-    this.login = login
-    this.createdAt = new Date()
+  constructor(dto: PostLikesDto){
+    this.status = dto.status
+    this.userId = dto.userId
+    this.postId = dto.postId
+    this.login = dto.login
+    this.createdAt = new Date().toISOString()
   }
 }
 
-export const LikesSchema = SchemaFactory.createForClass(Likes);
-export type LikesDocument = HydratedDocument<Likes>;
-export type LikesModelType = Model<LikesDocument> & typeof Likes;
+export const LikesPostSchema = SchemaFactory.createForClass(LikesPost);
+export type LikePostDocument = HydratedDocument<LikesPost>;
+export type LikesModelType = Model<LikePostDocument> & typeof LikesPost;

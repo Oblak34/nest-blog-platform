@@ -1,6 +1,6 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
-import { PostCreateAndBlogId } from '../api/create-post-blogId.dto';
+import { PostCreateAndBlogId } from '../api/input/create-post-blogId.dto';
 import { NotFoundException } from '@nestjs/common';
 
 export enum Status {

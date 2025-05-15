@@ -1,7 +1,7 @@
 
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
-import { CreateCommentDto } from '../create-comment.dto';
+import { CreateNewCommentDto } from '../api/input/create-new-comment.dto';
 
 export enum Status {
   None = 'None',
@@ -9,8 +9,8 @@ export enum Status {
   Dislike = 'Dislike'
 }
 
-@Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' }})
-export class Comments {
+@Schema({ timestamps: { updatedAt: 'updatedAt' }})
+export class Comment {
   @Prop({ type: String, required: true })
   content: string;
   @Prop(raw({
@@ -19,27 +19,29 @@ export class Comments {
   }))
   commentatorInfo: Record<string, string>;
   @Prop({ type: Date, required: true })
-  createAt: Date;
-@Prop(raw({
+  createdAt: string;
+  @Prop(raw({
   likesCount: {type: Number, default: 0},
-  dislikesCount: {type: Number, default: 0}
+  dislikesCount: {type: Number, default: 0},
   }))
   likesInfo: Record<string, number>
+  @Prop({ type: Date, nullable: true, default: null })
+  deletedAt: Date
+  @Prop( {type: String, required: true})
+  postId: string
 
-  static createInstanse(dto: CreateCommentDto): CommentDocument {
-    const comments = new this();
-    comments.content = dto.content;
-    comments.commentatorInfo = {}
-    comments.createAt = new Date()
-    comments.likesInfo = {
+  constructor( dto: CreateNewCommentDto){
+    this.content = dto.content
+    this.commentatorInfo = { userId: dto.userId, userLogin: dto.loginUser }
+    this.createdAt = new Date().toISOString()
+    this.postId = dto.postId
+    this.likesInfo = {
       likesCount: 0,
-      dislikesCount: 0,
+      dislikesCount: 0
     }
-    return comments as CommentDocument
   }
 }
-
-export const CommentSchema = SchemaFactory.createForClass(Comments);
-CommentSchema.loadClass(Comments);
-export type CommentDocument = HydratedDocument<Comments>;
-export type CommentModelType = Model<CommentDocument> & typeof Comments;
+export type CommentDocument = HydratedDocument<Comment>;
+export const CommentSchema = SchemaFactory.createForClass(Comment);
+CommentSchema.loadClass(Comment);
+export type CommentModelType = Model<CommentDocument> & typeof Comment;

@@ -1,31 +1,37 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { UsersTestManager } from '../helpers/users-test-manager';
-import { initSettings } from '../helpers/init-settings';
-import { JwtService } from '@nestjs/jwt';
 import { deleteAllData } from '../helpers/delete-all-data';
-import { CreateUserDto } from '../../src/features/user-accounts/api/input/create-user.dto';
+import { CreateUserDto } from '../../src/features/user-accounts/users/api/input/create-user.dto';
 import request from 'supertest';
 import { GLOBAL_PREFIX } from '../../src/setup/global-prefix.setup';
+import { Test } from '@nestjs/testing';
+import { AppModule } from '../../src/app.module';
+import { appSetup } from '../../src/setup/app.setup';
+import { NestFactory } from '@nestjs/core';
+import { CoreConfig } from '../../src/core/config/core.config';
 
 describe('/users', () => {
   let app: INestApplication
   let userTestManager: UsersTestManager
 
   beforeAll(async () => {
-    const result = await initSettings((moduleBuilder) => {
-      moduleBuilder.overrideProvider(JwtService).useValue(
-        new JwtService({
-          secret: 'jwt-secret',
-          signOptions: { expiresIn: '2s' }
-        })
-      )
-    })
-    app = result.app
-    userTestManager = result.userTestManager
+    const appContext = await NestFactory.createApplicationContext(AppModule)
+    const coreConfig = appContext.get<CoreConfig>(CoreConfig)
+    const DynamicAppModule = await AppModule.forRoot(coreConfig)
+    const moduleFixture = await Test.createTestingModule({
+      imports: [DynamicAppModule]
+    }).compile()
+
+    app = moduleFixture.createNestApplication()
+    appSetup(app);
+    await app.init()
+    userTestManager = new UsersTestManager(app)
+    await deleteAllData(app);
   })
+
   beforeEach(async () => {
     await deleteAllData(app);
-  });
+  })
   afterAll(async () => {
     await app.close()
   })
@@ -33,9 +39,9 @@ describe('/users', () => {
   describe('POST', () => {
     it('status 201, should create user', async () => {
       const body: CreateUserDto = {
-        login: 'name1',
+        login: 'namde1',
         password: 'qwerty',
-        email: 'email@email.em',
+        email: 'email@email.com',
       };
       const response = await userTestManager.createUser(body);
 
@@ -54,7 +60,7 @@ describe('/users', () => {
       };
 
       const res = await request(app.getHttpServer())
-        .post(`/${GLOBAL_PREFIX}/users`)
+        .post(`/users`)
         .send(body)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.BAD_REQUEST)
@@ -69,7 +75,7 @@ describe('/users', () => {
       };
 
       const res = await request(app.getHttpServer())
-        .post(`/${GLOBAL_PREFIX}/users`)
+        .post(`/users`)
         .send(body)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.BAD_REQUEST)
@@ -83,7 +89,7 @@ describe('/users', () => {
       };
 
       const res = await request(app.getHttpServer())
-        .post(`/${GLOBAL_PREFIX}/users`)
+        .post(`/users`)
         .send(body)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.BAD_REQUEST)
@@ -97,18 +103,17 @@ describe('/users', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/${GLOBAL_PREFIX}/users`)
+        .post(`/users`)
         .send(body)
         .auth('admin111', 'qwerty111') // incorrect login and password
         .expect(HttpStatus.UNAUTHORIZED)
     });
   })
-
   describe('GET', () => {
     it('status 200, should get all users', async () => {
       const users = await userTestManager.createSeveralUsers(12)
       const response = await request(app.getHttpServer())
-        .get(`/${GLOBAL_PREFIX}/users?pageNumber=2&sortDirection=asc`)
+        .get(`/users?pageNumber=2&sortDirection=asc`)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.OK)
 
@@ -122,12 +127,11 @@ describe('/users', () => {
     it('status 401 Unauthorized', async () => {
       const users = await userTestManager.createSeveralUsers(12)
       const response = await request(app.getHttpServer())
-        .get(`/${GLOBAL_PREFIX}/users?pageNumber=2&sortDirection=asc`)
+        .get(`/users?pageNumber=2&sortDirection=asc`)
         .auth('adm', 'qwerty')  // inccorect login
         .expect(HttpStatus.UNAUTHORIZED)
     })
   })
-
   describe('DELETE', () => {
     it('status 204, should delete user by id', async () => {
       const body: CreateUserDto = {
@@ -137,12 +141,12 @@ describe('/users', () => {
       };
       const result = await userTestManager.createUser(body);
       await request(app.getHttpServer())
-        .delete(`/${GLOBAL_PREFIX}/users/` + result.id)
+        .delete(`/users/` + result.id)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.NO_CONTENT)
 
       const response = await request(app.getHttpServer())
-        .get(`/${GLOBAL_PREFIX}/users`)
+        .get(`/users`)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.OK)
 
@@ -158,11 +162,11 @@ describe('/users', () => {
       };
       const result = await userTestManager.createUser(body);
       await request(app.getHttpServer())
-        .delete(`/${GLOBAL_PREFIX}/users/` + result.id)
+        .delete(`/users/` + result.id)
         .expect(HttpStatus.UNAUTHORIZED)
 
       const response = await request(app.getHttpServer())
-        .get(`/${GLOBAL_PREFIX}/users`)
+        .get(`/users`)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.OK)
 
@@ -176,12 +180,12 @@ describe('/users', () => {
       };
       const result = await userTestManager.createUser(body);
       await request(app.getHttpServer())
-        .delete(`/${GLOBAL_PREFIX}/users/` + result.id)
+        .delete(`/users/` + result.id)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.NO_CONTENT)
 
       await request(app.getHttpServer())
-        .delete(`/${GLOBAL_PREFIX}/users/` + result.id)
+        .delete(`/users/` + result.id)
         .auth('admin', 'qwerty')
         .expect(HttpStatus.NOT_FOUND)
     })

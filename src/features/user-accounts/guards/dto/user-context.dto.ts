@@ -1,3 +1,5 @@
 export class UserContextDto {
-  id: string;
+  userId: string;
+  ip: string;
+  device: string;
 }

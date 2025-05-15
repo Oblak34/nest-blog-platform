@@ -9,7 +9,8 @@ export class PostRepository {
   async getById(id: string){
     return await this.PostModel.findById(id)
   }
-  async save(post: PostDocument) {
-    await post.save();
+  async save(instanse) {
+    await instanse.save();
   }
+
 }

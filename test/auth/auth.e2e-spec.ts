@@ -1,30 +1,17 @@
-import { ExecutionContext, HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { UsersTestManager } from '../helpers/users-test-manager';
 import { deleteAllData } from '../helpers/delete-all-data';
 import request from 'supertest';
 import { GLOBAL_PREFIX } from '../../src/setup/global-prefix.setup';
-import { CreateUserDto } from '../../src/features/user-accounts/api/input/create-user.dto';
+import { CreateUserDto } from '../../src/features/user-accounts/users/api/input/create-user.dto';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { IMailService, MailService } from '../../src/mail/mail.service';
 import { appSetup } from '../../src/setup/app.setup';
 import { getModelToken } from '@nestjs/mongoose';
-import { User, UserDocument, UserModelType } from '../../src/features/user-accounts/domain/user.entity';
+import { User, UserDocument } from '../../src/features/user-accounts/users/domain/user.entity';
 import { Model } from 'mongoose';
-import { ThrottlerGuard } from '@nestjs/throttler';
-
-class ThrottlerGuardMock extends ThrottlerGuard  {
-  async canActivate(ctx: ExecutionContext) {
-    const request = ctx.switchToHttp().getRequest();
-    // mock implementation goes here
-    // ...
-    return true;
-  }
-};
-
-
-
-
+import { ThrottlerStorageService } from '@nestjs/throttler';
 
 class MockMailService implements IMailService {
   async sendUserRegistration(login: string, email: string, code: string) {
@@ -39,14 +26,13 @@ describe('/auth', () => {
   let app: INestApplication
   let userTestManager: UsersTestManager
   let UserModel
-
-
+  let throttlerStorage
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule]
+      imports: [AppModule],
+      providers: [ThrottlerStorageService]
     }).overrideProvider(MailService).useClass(MockMailService)
-      .overrideProvider(ThrottlerGuard).useClass(ThrottlerGuardMock)
       //.overrideProvider(AuthConfig).useValue({skipPasswordCheck: false, jwtSecret: JWT_MODULE_OPTIONS } as AuthConfig)
       .compile()
 
@@ -60,15 +46,16 @@ describe('/auth', () => {
 
   beforeEach(async () => {
     await deleteAllData(app);
+    throttlerStorage = app.get<ThrottlerStorageService>(ThrottlerStorageService);
+
+    console.log(throttlerStorage)
+    throttlerStorage.storage.clear();
   });
-
-
   afterAll(async () => {
     await app.close()
   })
 
-  describe('/login', () => {
-    it('200, returns JWT accessToken', async () => {
+  it('200, returns JWT accessToken', async () => {
       const user: CreateUserDto = {
         login: 'Alice',
         password: 'qwerty',
@@ -89,7 +76,7 @@ describe('/auth', () => {
 
       expect(result.body.accessToken).toBeDefined()
     })
-    it('400, if the inputModel has incorrect values', async () => {
+  it('400, if the inputModel has incorrect values', async () => {
       const user: CreateUserDto = {
         login: 'ui',
         password: 'qwerty',
@@ -110,7 +97,7 @@ describe('/auth', () => {
 
       expect(result.body.accessToken).toBeUndefined()
     })
-    it('401, if the password or login or email is wrong', async () => {
+  it('401, if the password or login or email is wrong', async () => {
       const user: CreateUserDto = {
         login: 'Alice',
         password: 'qwerty',
@@ -130,10 +117,7 @@ describe('/auth', () => {
         .expect(HttpStatus.UNAUTHORIZED)
 
     })
-  })
-
-  describe('/registration', () => {
-    it('status 204, registration success, input data is accepted', async () => {
+  it('status 204, registration success, input data is accepted', async () => {
       const body: CreateUserDto = {
         login: 'Mary',
         password: 'qwerty',
@@ -143,8 +127,8 @@ describe('/auth', () => {
         .post(`/${GLOBAL_PREFIX}/auth/registration`)
         .send(body)
         .expect(HttpStatus.NO_CONTENT)
-    })
-    it('status 400, incorrect value', async () => {
+  })
+  it('status 400, incorrect value', async () => {
       const body: CreateUserDto = {
         login: 'Al', // incorrect login
         password: 'qwerty',
@@ -155,7 +139,7 @@ describe('/auth', () => {
         .send(body)
         .expect(HttpStatus.BAD_REQUEST)
     })
-    it('status 429, more than 5 attempts from one IP-address during 10 seconds', async () => {
+  it('status 429, more than 5 attempts from one IP-address during 10 seconds', async () => {
       await userTestManager.registrationSeveralUsers(5)
       const body: CreateUserDto = {
         login: 'Alice',
@@ -167,10 +151,7 @@ describe('/auth', () => {
         .send(body)
         .expect(HttpStatus.TOO_MANY_REQUESTS)
     })
-  })
-
-  describe('/registration-confirmation', () => {
-    it('204, confirmation', async () => {
+  it('204, confirmation', async () => {
       const body: CreateUserDto = {
         login: 'Alice',
         password: 'qwerty',
@@ -190,8 +171,8 @@ describe('/auth', () => {
 
       const updatedUser = await UserModel.findOne({'accountData.email' : body.email})
       expect(updatedUser.emailConfirmation.isConfirmed).toBe(true)  // теперь user поддтвержден
-    })
-    it('400, if the confirmation code is incorrect, expired or already been applied', async () => {
+  })
+  it('400, if the confirmation code is incorrect, expired or already been applied', async () => {
       const body: CreateUserDto = {
         login: 'Alik',
         password: 'qwerty',
@@ -210,10 +191,7 @@ describe('/auth', () => {
         .expect(HttpStatus.BAD_REQUEST)
 
     })
-  })
-
-  describe('/registration-email-resending', () => {
-    it('204, input data is accepted.Email with confirmation code will be send to passed email address', async () => {
+  it('204, input data is accepted.Email with confirmation code will be send to passed email address', async () => {
       const body: CreateUserDto = {
         login: 'Alice',
         password: 'qwerty',
@@ -227,7 +205,4 @@ describe('/auth', () => {
         .expect(HttpStatus.NO_CONTENT)
 
     })
-  })
-
-
 })

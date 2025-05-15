@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { BlogCreateDto } from '../api/create-blog.dto';
-import { BlogViewDto } from '../api/blog-view.dto';
+import { BlogCreateDto } from '../api/input/create-blog.dto';
+import { BlogViewDto } from '../api/output/blog-view.dto';
 import { HydratedDocument, Model } from 'mongoose';
 import { NotFoundException } from '@nestjs/common';
 
@@ -22,7 +22,6 @@ export class Blog {
 
   makeDeleted() {
     if (this.deletedAt !== null) {
-      //throw new Error('User not found');
       throw new NotFoundException(`post not exist`)
     }
     this.deletedAt = new Date();

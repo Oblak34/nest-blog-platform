@@ -7,8 +7,8 @@ import { Connection } from 'mongoose';
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import { UsersTestManager } from './users-test-manager';
 import { AuthConfig } from '../../src/features/user-accounts/config/auth.config';
-import { UserRepository } from '../../src/features/user-accounts/infrastructure/user.repository';
-import { User, UserSchema } from '../../src/features/user-accounts/domain/user.entity';
+import { UserRepository } from '../../src/features/user-accounts/users/infrastructure/user.repository';
+import { User, UserSchema } from '../../src/features/user-accounts/users/domain/user.entity';
 
 
 
