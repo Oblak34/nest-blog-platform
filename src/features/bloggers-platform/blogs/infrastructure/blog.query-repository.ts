@@ -15,28 +15,4 @@ export class BlogQueryRepository {
     if(!blog) return null
     return Blog.convertToView(blog)
   }
-
-  async getAllBlogs(query: GetBlogsQueryParams): Promise<PaginatedViewDto<BlogViewDto[]>> {
-    const filter: FilterQuery<Blog> = {
-      deletedAt: null
-    }
-    if(query.searchNameTerm){
-      filter.name = { $regex: query.searchNameTerm, $options: 'i' }
-    }
-
-    const blogs = await this.BlogModel.find(filter)
-      .sort({ [query.sortBy] : query.sortDirection })
-      .skip(query.calculateSkip())
-      .limit(query.pageSize);
-
-    const totalCount: number = await this.BlogModel.countDocuments(filter);
-    const items = blogs.map(BlogViewDto.mapToView)
-
-    return PaginatedViewDto.mapToView({
-      items,
-      totalCount,
-      page: query.pageNumber,
-      size: query.pageSize,
-    });
-  }
 }

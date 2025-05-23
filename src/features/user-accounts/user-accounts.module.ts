@@ -35,10 +35,20 @@ import { GetAllDevicesUseCase } from './sessions/application/use-cases/get-all-d
 import { SessionController } from './sessions/api/session.controller';
 import { DeleteAllDevicesUseCase } from './sessions/application/use-cases/delete-all-devices.use-case';
 import { DeleteDeviceByIdUseCase } from './sessions/application/use-cases/delete-device-by-id.use-case';
+import {
+  ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
+  REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
+} from './constants/auth-tokens.inject-constans';
+import { GetAllUsersUseCase } from './users/application/user-use-cases/get-all-users.use-case';
+import { GetUserByIdUseCase } from './users/application/user-use-cases/get-user-by-id.use-case';
+import { GetMeUseCase } from './auth/application/auth-use-cases/get-me.use-case';
 
 const useCases = [
   CreateUserUseCase,
   DeleteUserUseCase,
+  GetAllUsersUseCase,
+  GetUserByIdUseCase,
+  GetMeUseCase,
   LoginUseCase,
   RegistrationUseCase,
   ResendingUseCase,
@@ -58,14 +68,7 @@ const useCases = [
     CqrsModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }, {name: AuthSession.name, schema: AuthSessionSchema}]),
     ThrottlerModule.forRoot([{ ttl: 10000, limit: 5, },],),
-    JwtModule.registerAsync({
-      imports: [ UserAccountsModule],
-      inject: [AuthConfig],
-      useFactory: async (authConfig: AuthConfig) => ({
-        secret: authConfig.jwtSecret,
-        signOptions: { expiresIn: authConfig.expiresIn }
-      })
-    }),
+    JwtModule,
     PassportModule,
     MailModule
   ],
@@ -80,6 +83,30 @@ const useCases = [
     JwtStrategy,
     AuthQueryRepository,
     AuthConfig,
+    {
+      provide: ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
+      useFactory: (authConfig: AuthConfig): JwtService => {
+        return new JwtService({
+          secret: authConfig.jwtSecret,
+          signOptions: { expiresIn: authConfig.expiresInAccessToken },
+        });
+      },
+      inject: [
+        AuthConfig
+      ],
+    },
+    {
+      provide: REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
+      useFactory: (authConfig: AuthConfig): JwtService => {
+        return new JwtService({
+          secret: authConfig.jwtSecret,
+          signOptions: { expiresIn: authConfig.expiresInRefreshToken },
+        });
+      },
+      inject: [
+        AuthConfig
+      ],
+    }
   ],
   exports: [ AuthConfig, JwtStrategy ]
 })

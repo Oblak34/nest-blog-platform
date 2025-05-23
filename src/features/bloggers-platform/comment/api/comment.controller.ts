@@ -9,7 +9,6 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { CommentQueryRepository } from '../infrastructure/comment.query-repository';
 import { ContentDto } from '../../posts/api/input/content.dto';
 import { JwtAuthGuard } from '../../../user-accounts/guards/jwt.auth-guard';
 import {
@@ -20,23 +19,24 @@ import { UserContextDto } from '../../../user-accounts/guards/dto/user-context.d
 import { LikeStatusDto } from './input/likeStatus.dto';
 import { AuthGuardAccess } from '../../../../core/guard/checkAccessToken';
 import { SkipThrottle } from '@nestjs/throttler';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { UpdateCommentUseCaseCommand } from '../application/use-cases/update-comment.use-case';
 import { DeleteCommentUseCaseCommand } from '../application/use-cases/delete-comment.use-case';
 import { LikeStatusCommentUseCaseCommand } from '../application/use-cases/like-status-comment.use-case';
+import { GetCommentByIdUseCaseCommand } from '../application/use-cases/get-comment-by-id.use-case';
 
 @SkipThrottle()
 @Controller('comments')
 export class CommentController {
-  constructor(private commentQueryRepository: CommentQueryRepository,
-              private commandBus: CommandBus) {}
+  constructor(private commandBus: CommandBus,
+              private queryBus: QueryBus) {}
 
 
 
   @UseGuards(AuthGuardAccess)
   @Get(':id')
   async getCommentById(@Param('id') id: string, @ExtractUserFromRequestOrNotUser() user?: UserContextDto){
-    const result =  await this.commentQueryRepository.getById(id, user?.userId)
+    const result =  await this.queryBus.execute(new GetCommentByIdUseCaseCommand(id, user?.userId))
     if(result == null){
       throw new NotFoundException(`comment with id ${id} not exist`)
     }

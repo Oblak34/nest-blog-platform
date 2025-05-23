@@ -10,7 +10,7 @@ import { UserContextDto } from '../../guards/dto/user-context.dto';
 import { JwtAuthGuard } from '../../guards/jwt.auth-guard';
 import { AuthQueryRepository } from '../infrastructure/auth.query-repository';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { LoginUseCaseCommand } from '../application/auth-use-cases/login.use-case';
 import { RegistrationUseCaseCommand } from '../application/auth-use-cases/registration.use-case';
 import { ResendingUseCaseCommand } from '../application/auth-use-cases/resending.use-case';
@@ -22,12 +22,13 @@ import { RefreshTokenUseCaseCommand } from '../application/auth-use-cases/refres
 import { RefreshTokenPayloadDto } from './input/refreshTokenPayload.dto';
 import { UnauthorizedDomainException } from '../../../../core/exception/domain-exception';
 import { LogoutUseCaseCommand } from '../application/auth-use-cases/logout.use-case';
+import { GetMeUseCaseCommand } from '../application/auth-use-cases/get-me.use-case';
 
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authQueryRepository: AuthQueryRepository,
-              private commandBus: CommandBus){}
+  constructor(private commandBus: CommandBus,
+              private queryBus: QueryBus){}
 
   @UseGuards(ThrottlerGuard)
   @Post('registration')
@@ -105,7 +106,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@ExtractUserFromRequest() dto: UserContextDto){
-
-    return this.authQueryRepository.getMe(dto.userId)
+    return this.queryBus.execute( new GetMeUseCaseCommand(dto.userId))
   }
 }

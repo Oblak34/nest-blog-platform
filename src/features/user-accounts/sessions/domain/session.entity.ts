@@ -1,7 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
-import { UserContextDto } from '../../guards/dto/user-context.dto';
-import { CreateSessionDto } from '../api/input/create-session.dto';
 
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })

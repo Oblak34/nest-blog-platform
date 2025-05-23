@@ -1,5 +1,5 @@
 import { RefreshTokenPayloadDto } from '../../../auth/api/input/refreshTokenPayload.dto';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { InjectModel } from '@nestjs/mongoose';
 import { AuthSession, AuthSessionType, SessionDocument } from '../../domain/session.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -9,8 +9,8 @@ export class GetAllDevicesUseCaseCommand {
   }
 }
 
-@CommandHandler(GetAllDevicesUseCaseCommand)
-export class GetAllDevicesUseCase implements ICommandHandler<GetAllDevicesUseCaseCommand> {
+@QueryHandler(GetAllDevicesUseCaseCommand)
+export class GetAllDevicesUseCase implements IQueryHandler<GetAllDevicesUseCaseCommand> {
   constructor(@InjectModel(AuthSession.name) private authSessionModel: AuthSessionType,
               private jwtService: JwtService) {
   }

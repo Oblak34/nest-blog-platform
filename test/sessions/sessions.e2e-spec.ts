@@ -7,6 +7,7 @@ import { appSetup } from '../../src/setup/app.setup';
 import { deleteAllData } from '../helpers/delete-all-data';
 import { CreateUserDto } from '../../src/features/user-accounts/users/api/input/create-user.dto';
 import request from 'supertest';
+import { delay } from '../helpers/delay';
 
 describe('/security', () => {
   let app: INestApplication
@@ -171,6 +172,7 @@ describe('/security', () => {
         .send(user)
         .expect(HttpStatus.NO_CONTENT)
 
+      await delay(10000)
       // залогинем три сессии одного пользователя с разных клиентов
       const loginedChrome = await request(app.getHttpServer())
         .post(`/auth/login`)

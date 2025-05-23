@@ -4,18 +4,6 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class
 import { configValidationUtility } from '../../../core/config/configValidationUtility';
 import { Type } from 'class-transformer';
 
-class dates {
-
-  @IsNumber()
-  @Type(()=> Number)
-  hours: number
-  @IsNumber()
-  @Type(()=> Number)
-  minutes: number
-  @IsNumber()
-  @Type(()=> Number)
-  seconds: number
-}
 
 @Injectable()
 export class AuthConfig {
@@ -27,11 +15,14 @@ export class AuthConfig {
   @IsNotEmpty({message: 'set env variable jwt secret'})
   jwtSecret: string
 
-  @ValidateNested()
-  @Type(()=> dates)
-  expirationDate: dates
+  expirationDate: {
+    hours: number,
+    minutes: number,
+    seconds: number
+  }
 
-  expiresIn: string
+  expiresInAccessToken: string
+  expiresInRefreshToken: string
 
   @IsBoolean({ message: 'Set ENV variable userConfirmed is boolean' })
   userConfirmed: boolean | null
@@ -44,7 +35,8 @@ export class AuthConfig {
       minutes: Number(this.configService.get('EXPIRATION_DATE_MINUTES')),
       seconds: Number(this.configService.get('EXPIRATION_DATE_SECONDS'))
     }
-    this.expiresIn = this.configService.get('TOKEN_EXPIRES_IN')
+    this.expiresInAccessToken = this.configService.get('ACCESS_TOKEN_EXPIRES_IN')
+    this.expiresInRefreshToken = this.configService.get('REFRESH_TOKEN_EXPIRES_IN')
     this.userConfirmed = configValidationUtility.convertToBoolean(this.configService.get('USER_CONFIRMED'))
   }
 }

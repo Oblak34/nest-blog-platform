@@ -1,5 +1,5 @@
 import { Controller, Delete, Get, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ExtractRefreshFromCookie } from '../../guards/decorators/param/extract-user-from-request';
 import { RefreshTokenPayloadDto } from '../../auth/api/input/refreshTokenPayload.dto';
 import { GetAllDevicesUseCaseCommand } from '../application/use-cases/get-all-devices.use-case';
@@ -9,12 +9,13 @@ import { DeleteDevicesByIdUseCaseCommand } from '../application/use-cases/delete
 
 @Controller('security')
 export class SessionController {
-  constructor(private commandBus: CommandBus) {}
+  constructor(private commandBus: CommandBus,
+              private queryBus: QueryBus) {}
 
   @UseGuards(AuthGuardRefresh)
   @Get('devices')
   async getAllDevices(@ExtractRefreshFromCookie() payload: RefreshTokenPayloadDto){
-    return await this.commandBus.execute(new GetAllDevicesUseCaseCommand(payload))
+    return await this.queryBus.execute(new GetAllDevicesUseCaseCommand(payload))
   }
 
   @UseGuards(AuthGuardRefresh)

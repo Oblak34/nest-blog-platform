@@ -24,29 +24,32 @@ import { UserContextDto } from '../../../user-accounts/guards/dto/user-context.d
 import { AuthGuardAccess } from '../../../../core/guard/checkAccessToken';
 import { LikeStatusDto } from '../../comment/api/input/likeStatus.dto';
 import { BasicAuthGuard } from '../../../user-accounts/guards/basic/basic-auth.guard';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreatePostUseCaseCommand } from '../application/use-cases/create-post.use-case';
 import { UpdatePostUseCaseCommand } from '../application/use-cases/update-post.use-case';
 import { DeletePostUseCaseCommand } from '../application/use-cases/delete-post.use-case';
 import { LikeStatusPostUseCaseCommand } from '../application/use-cases/like-status-post.use-case';
 import { CreateCommentUseCaseCommand } from '../../comment/application/use-cases/create-comment.use-case';
+import { GetAllPostsUseCaseCommand } from '../application/use-cases/get-posts.use-case';
+import { GetPostByIdUseCaseCommand } from '../application/use-cases/get-post-by-id.use-case';
+import { GetCommentByIdUseCaseCommand } from '../../comment/application/use-cases/get-comment-by-id.use-case';
+import { GetCommentsUseCaseCommand } from '../../comment/application/use-cases/get-comments.use-case';
 
 @Controller('posts')
 export class PostController {
-  constructor(private postQueryRepository: PostQueryRepository,
-              private commentQueryRepository: CommentQueryRepository,
-              private commandBus: CommandBus) {}
+  constructor(private commandBus: CommandBus,
+              private queryBus: QueryBus) {}
 
   @UseGuards(AuthGuardAccess)
   @Get()
   async getAllPost(@Query() query: GetPostsQueryParams, @ExtractUserFromRequestOrNotUser() user?: UserContextDto) {
-    return await this.postQueryRepository.getAllPosts(query, user?.userId)
+    return await this.queryBus.execute(new GetAllPostsUseCaseCommand(query, user?.userId))
   }
 
   @UseGuards(AuthGuardAccess)
   @Get(':id')
   async getById(@Param('id') postId: string, @ExtractUserFromRequestOrNotUser() user?: UserContextDto) {
-    const post =  await this.postQueryRepository.findById(postId, user?.userId)
+    const post =  await this.queryBus.execute( new GetPostByIdUseCaseCommand(postId, user?.userId))
     if(!post){
       throw new NotFoundException(`blog with id ${postId} not exist`)
     }
@@ -60,7 +63,7 @@ export class PostController {
     if (postId === null) {
       throw new NotFoundException(`blog with id ${body.blogId} not exist`)
     }
-    return await this.postQueryRepository.findById(postId)
+    return await this.queryBus.execute( new GetPostByIdUseCaseCommand(postId, undefined))
   }
 
   @UseGuards(BasicAuthGuard)
@@ -88,7 +91,7 @@ export class PostController {
   @UseGuards(AuthGuardAccess)
   @Get(':postId/comments')
   async getAllomments(@Param('postId') postId : string, @Query() query: GetCommentsQueryParams, @ExtractUserFromRequestOrNotUser() user?: UserContextDto){
-    const result = await this.commentQueryRepository.getAllComments(query, postId, user?.userId)
+    const result = await this.queryBus.execute( new GetCommentsUseCaseCommand(query, postId, user?.userId))
     if(!result){
       throw new NotFoundException(`post with id ${postId} not exist`)
     }
@@ -99,7 +102,7 @@ export class PostController {
   @Post(':postId/comments')
   async createCommentByPostId(@Param('postId') PostId: string, @Body() content: ContentDto, @ExtractUserFromRequest() user: UserContextDto){
     const commentId: string = await this.commandBus.execute(new CreateCommentUseCaseCommand(content, PostId, user.userId))
-    return await this.commentQueryRepository.getById(commentId)
+    return await this.queryBus.execute( new GetCommentByIdUseCaseCommand(commentId, user?.userId))
   }
 
   @UseGuards(JwtAuthGuard)

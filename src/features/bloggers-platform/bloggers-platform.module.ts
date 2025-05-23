@@ -33,17 +33,31 @@ import { UpdateCommentUseCase } from './comment/application/use-cases/update-com
 import { DeleteCommentUseCase } from './comment/application/use-cases/delete-comment.use-case';
 import { LikeStatusCommentUseCase } from './comment/application/use-cases/like-status-comment.use-case';
 import { AuthSession, AuthSessionSchema } from '../user-accounts/sessions/domain/session.entity';
+import { GetAllBlogsUseCase } from './blogs/application/use-cases/get-all-blogs.use-case';
+import { GetBlogByIdUseCase } from './blogs/application/use-cases/get-blog-by-id.use-case';
+import { GetCommentByIdUseCase } from './comment/application/use-cases/get-comment-by-id.use-case';
+import { GetCommentsUseCase } from './comment/application/use-cases/get-comments.use-case';
+import { GetPostByIdUseCase } from './posts/application/use-cases/get-post-by-id.use-case';
+import { GetAllPostsUseCase } from './posts/application/use-cases/get-posts.use-case';
+import { GetPostsByBlogIdUseCase } from './posts/application/use-cases/get-all-posts-by-blogId.use-case';
 
 const useCases = [
   CreateBlogUseCase,
   DeleteBlogUseCase,
   UpdateBlogUseCase,
+  GetAllBlogsUseCase,
+  GetBlogByIdUseCase,
   CreatePostUseCase,
   UpdatePostUseCase,
   DeletePostUseCase,
   CreatePostByBlogIdUseCase,
+  GetPostByIdUseCase,
+  GetAllPostsUseCase,
+  GetPostsByBlogIdUseCase,
   LikeStatusPostUseCase,
   CreateCommentUseCase,
+  GetCommentByIdUseCase,
+  GetCommentsUseCase,
   UpdateCommentUseCase,
   DeleteCommentUseCase,
   LikeStatusCommentUseCase

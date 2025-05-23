@@ -1,12 +1,17 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { JwtService } from '@nestjs/jwt';
 import {v4 as uuidv4} from "uuid";
 import jwt from "jsonwebtoken"
 import { UserContextDto } from '../../../guards/dto/user-context.dto';
 import { AuthSession, AuthSessionType } from '../../../sessions/domain/session.entity';
 import { InjectModel } from '@nestjs/mongoose';
+import { Inject } from '@nestjs/common';
+import {
+  ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
+  REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
+} from '../../../constants/auth-tokens.inject-constans';
 
-export class LoginUseCaseCommand {
+export class LoginUseCaseCommand{
   constructor(public dto: UserContextDto) {
   }
 }
@@ -14,16 +19,18 @@ export class LoginUseCaseCommand {
 @CommandHandler(LoginUseCaseCommand)
 export class LoginUseCase implements ICommandHandler<LoginUseCaseCommand> {
   constructor(private jwtService: JwtService,
-              @InjectModel (AuthSession.name) private authSessionModel: AuthSessionType ) {
+              @InjectModel (AuthSession.name) private authSessionModel: AuthSessionType,
+              @Inject(ACCESS_TOKEN_STRATEGY_INJECT_TOKEN) private accessTokenContext: JwtService,
+              @Inject(REFRESH_TOKEN_STRATEGY_INJECT_TOKEN) private refreshTokenContext: JwtService,) {
   }
 
-  async execute(command: LoginUseCaseCommand){
+  async execute(command: LoginUseCaseCommand): Promise<{ accessToken: string, refreshToken: string }>{
     const { userId, ip, device } = command.dto;
 
-    const accessToken: string = await this.jwtService.sign({ userId: userId }, { expiresIn: '10s'})
+    const accessToken: string = await this.accessTokenContext.sign({ userId: userId })
 
     const deviceId = uuidv4()
-    const refreshToken: string = await this.jwtService.sign({ userId: userId, deviceId: deviceId })
+    const refreshToken: string = await this.refreshTokenContext.sign({ userId: userId, deviceId: deviceId })
 
 
     const payload = jwt.verify(refreshToken, 'jwt-secret') as {userId: string, deviceId: string, iat: number, exp: number}
